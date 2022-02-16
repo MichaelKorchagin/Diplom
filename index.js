@@ -1,13 +1,19 @@
 require("@babel/core");
 require("@babel/register");
-const { saveData, readData } = require('./src/data');
+const { saveData, readData, searchPeaks } = require('./src/data');
 
-
-switch(process.argv[2]) {
+const [, , operation, fileName] = process.argv;
+switch(operation) {
   case "saveData":
-    saveData().then(console.log("end"));
+    const timeFrame = process.argv[3];
+    saveData(timeFrame).then(console.log("end"));
     break;
   case "readData":
-    readData();
+    readData(fileName);
     break;
+  case "searchPeaks":
+    searchPeaks(fileName);
+    break;
+  default:
+    throw new Error(`Argument 4 operation: ${operation} is not supported`);
 };
