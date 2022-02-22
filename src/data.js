@@ -2,9 +2,10 @@ import axios from "axios";
 import fs from "fs";
 import { parametrs } from '../index';
 
-const url5Min = 'https://www.alphavantage.co/query?function=CRYPTO_INTRADAY&symbol=ETH&market=USD&interval=5min&apikey=demo';
-const url15min = 'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY_EXTENDED&symbol=IBM&interval=15min&slice=year1month2&apikey=demo';
-const url60min = 'https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY_EXTENDED&symbol=IBM&interval=60min&slice=year1month3&adjusted=false&apikey=demo';
+const url5Min = 'https://www.alphavantage.co/query?function=CRYPTO_INTRADAY&symbol=ETH&market=USD&interval=5min&apikey=ISRNCIVORXW4BP27';
+const url15min = 'https://www.alphavantage.co/query?function=CRYPTO_INTRADAY&symbol=ETH&market=USD&interval=15min&slice=year1month2&apikey=ISRNCIVORXW4BP27';
+const url60min = 'https://www.alphavantage.co/query?function=CRYPTO_INTRADAY&symbol=ETH&market=USD&interval=60min&slice=year1month3&adjusted=false&apikey=ISRNCIVORXW4BP27';
+
 const dataPath = `${process.cwd()}/data/`; // Во время работы node запускает process. CWD - возвращает путь к root. = process.cwd() + "data".
 const objDate = new Date();
 
@@ -31,29 +32,26 @@ export const saveData = async (timeFrame) => {
 
 };
 
-export const readData = (fileName) => {
-  const pathToDataHere = dataPath + fileName + "(5min).json";
+export const readData = (fileName, timeFrame) => {
+  const pathToDataHere = dataPath + fileName + "(" + `${timeFrame}` + "min)" + ".json";
   const fileString = fs.readFileSync(pathToDataHere); // возвращает весь файл, как стрингу
   const apiFile = JSON.parse(fileString);
-  const upperKey = "Time Series Crypto (5min)";   // заменяют вызов через точку, потому что стринга
-  // const lowerKey = "2022-01-14 08:30:00";
-  const value = apiFile[upperKey];
+  const upperKey = `Time Series Crypto (${timeFrame}min)`;   // заменяют вызов через точку, потому что стринга
+  const lowerKey = "2022-02-22 15:00:00";
+  const value = apiFile[upperKey][lowerKey];
 
   console.log(value);
 };
 
-export const searchPeaks = (fileName) => {
+export const searchPeaks = (fileName, timeFrame) => {
   const objDate = new Date();
-  const pathToDataHere = dataPath + fileName + "(5min).json";
+  const pathToDataHere = dataPath + fileName + `(${timeFrame}min).json`;
   const fileString = fs.readFileSync(pathToDataHere); // возвращает весь файл, как стрингу
   const apiFile = JSON.parse(fileString);
   const upperKey = "Meta Data";   // заменяют вызов через точку, потому что стринга
   const lowerKey = "6. Last Refreshed";
-  // const lowerKey = String(objDate.getFullYear()) + "-" + String(objDate.getMonth() + 1).padStart(2, "0") + "-" + String(objDate.getDate()).padStart(2, "0") + " " + String(objDate.getHours()) + ":" + String(objDate.getMinutes()) + ":00";
-  const value = apiFile[upperKey][lowerKey];
-}
+  const lastRefreshedTime = apiFile[upperKey][lowerKey];
+};
 
-// TODO: 5. !!! Получать графики во всем временным интервалам ??? приходит другой API
-//       6. Выделяем нужные свечки.
-//       7. Ищем экстремумы.
-//       8. Определяем вверх или вниз идет тренд.
+// TODO: 6. Выделяем нужные свечки. Ищем экстремумы.
+//       7. Определяем вверх или вниз идет тренд. Функция будет аналитически рисовать линии поддержки и сопротивления.
