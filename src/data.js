@@ -54,60 +54,120 @@ export const searchAllPeaks = (fileName, timeFrame) => {
   const upperKeyTimeSeries = `Time Series Crypto (${ timeFrame }min)`;
   const timeSeriesArr = Object.entries(apiFile[upperKeyTimeSeries]);  // превратили в аррей. редьюс расширяет функционал
   const highPriceKey = "2. high";
+  const lowPriceKey = "3. low";
 
-  let prev = new BigNumber(0);
-  let sec = new BigNumber(0);
+  let highPeaks = {};
+  let lowPeaks = {};
 
-  const result = timeSeriesArr.reduce(
-    (acc, [ key, priceObject ], index) => {
-      let operand = new BigNumber(priceObject[highPriceKey]);
-      if (index !== timeSeriesArr.length - 1) {
-        sec = new BigNumber(timeSeriesArr[index + 1][1][highPriceKey]);
-      } else {
-        sec = new BigNumber(0);
-      }
+  for (let index = 1; index < timeSeriesArr.length - 2; index++) {
 
-      if (operand > prev && operand > sec) {
-        acc[index] = operand;
-      }
+    let highPrevious = new BigNumber(timeSeriesArr[index - 1][1][highPriceKey]);
+    let highOperand = new BigNumber(timeSeriesArr[index][1][highPriceKey]);
+    let highNext = new BigNumber(timeSeriesArr[index + 1][1][highPriceKey]);
 
-      prev = operand;
-      return acc;
-    }, {}
-  );
-  console.log(Object.entries(result).map(element => element.toString()));
+    let lowPrevious = new BigNumber(timeSeriesArr[index - 1][1][lowPriceKey]);
+    let lowOperand = new BigNumber(timeSeriesArr[index][1][lowPriceKey]);
+    let lowNext = new BigNumber(timeSeriesArr[index + 1][1][lowPriceKey]);
 
 
-  const resultForResistantLine = Object.entries(result);
-  const resistantLine = resultForResistantLine.reduce(
-    (acc, [ key, price ], indexHere) => {
-      if (indexHere <= resultForResistantLine.length - 3) {
+    if (highOperand > highPrevious && highOperand > highNext) {
+      highPeaks[index] = highOperand;
+    }
 
-        const firstXKoef = key;
-        const secXKoef = resultForResistantLine[indexHere + 1][0];
-        const thirdXKoef = resultForResistantLine[indexHere + 2][0];
-        const firstYkoef = price;
-        const secYKoef = resultForResistantLine[indexHere + 1][1];
-        const thirdyKoef = resultForResistantLine[indexHere + 2][1];
+    highPrevious = highOperand;
+    highOperand = highNext;
+    highNext = new BigNumber(timeSeriesArr[index + 2][1][highPriceKey]);
 
-        const s = ((firstXKoef - thirdXKoef) * (secYKoef - thirdyKoef) - (secXKoef - thirdXKoef) * (firstYkoef - thirdyKoef)) / new BigNumber(2);
-        // if (s <= 0 && s > -0.5 || s >= 0 && s < 0.5) {
-        //   ;
-        // }
-        acc[indexHere] = s;
-      }
 
-      return acc;
-    }, {}
-  );
-  console.log(Object.entries(resistantLine).map(element => element.toString()));
+    if (lowOperand < lowPrevious && lowOperand < lowNext) {
+      lowPeaks[index] = lowOperand;
+    }
+
+    lowPrevious = lowOperand;
+    lowOperand = lowNext;
+    lowNext = new BigNumber(timeSeriesArr[index + 2][1][lowPriceKey])
+  }
 };
 
+//
+// let a = new BigNumber(timeSeriesArr[index][1][highPriceKey]);
+// let b = new BigNumber(timeSeriesArr[index + 1][1][highPriceKey]);
+//
+// if (a  b) {
+//
+//   let firstXKoef = new BigNumber(index);
+//   let secXKoef = new BigNumber(index + 1);
+//   let thirdXKoef = new BigNumber(index + 2);
+//   let firstYKoef = new BigNumber(timeSeriesArr[index][1][highPriceKey]);
+//   let secYKoef = new BigNumber(timeSeriesArr[index + 1][1][highPriceKey]);
+//   let thirdYKoef = new BigNumber(timeSeriesArr[index + 2][1][highPriceKey]);
+//   let s = new BigNumber(0);
+//
+//   s = ((firstXKoef - thirdXKoef) * (secYKoef - thirdYKoef) - (secXKoef - thirdXKoef) * (firstYKoef - thirdYKoef)) / new BigNumber(2);
+//
+// }
+
+// const result = timeSeriesPeaksArr.reduce(
+//   (acc, [ key, priceObject ], index) => {
+//     let operand = new BigNumber(priceObject[highPriceKey]);
+//     if (index !== timeSeriesPeaksArr.length / 3) {
+//       acc.partOne =
+//     }
+//     if (index)
+//       }, {
+//     partOne: {},
+//     partTwo: {},
+//     partThree: {}
+//   }
+// );
+// console.log(Object.entries(result).map(element => element.toString()));
+
+// Три пика на одной прямой:
+// найти область в которую ходят все свечи
 
 
-// TODO: 7. Сочетание без повторений. Выбрать нужные экстремумы для сопротивления и поддержки. 3 точки, примерно на одной линии.
+//   const resultForResistantLine = Object.entries(result);
+//   const resistantLine = resultForResistantLine.reduce(
+//     (acc, [ key, price ], indexFirst) => {
+//       if (indexFirst <= resultForResistantLine.length - 3) {
+//
+//         let firstXKoef = key;
+//         let secXKoef = resultForResistantLine[indexFirst + 1][0];
+//         let thirdXKoef = resultForResistantLine[indexFirst + 2][0];
+//         let firstYKoef = price;
+//         let secYKoef = resultForResistantLine[indexFirst + 1][1];
+//         let thirdYKoef = resultForResistantLine[indexFirst + 2][1];
+//
+//         const objS =  resultForResistantLine.reduce(
+//           (acc, [firstXKoef, firstYkoef, s], indexSec) => {
+//             do {
+//               const s = ((firstXKoef - thirdXKoef) * (secYKoef - thirdYKoef) - (secXKoef - thirdXKoef) * (firstYKoef - thirdYKoef)) / new BigNumber(2);
+//               acc[indexSec] = s;
+//
+//               secXKoef = resultForResistantLine[indexFirst + 2][0];
+//               secYKoef = resultForResistantLine[indexFirst + 2][1];
+//             }
+//             while (indexFirst <= resultForResistantLine.length - 2);
+//
+//           }, {}
+//         );
+//
+//         acc[indexFirst] = objS;
+//
+//       }
+//
+//       return acc;
+//     }, {}
+//   );
+//   console.log(Object.entries(resistantLine).map(element => element.toString()));
+// };
+
+
+// TODO: 7. Нашли прямую, по прямой смотрим другие точки, которые попадают в этот диапазон (мб поиск площади другой фигуры)
+//       8. Сочетание без повторений. Выбрать нужные экстремумы для сопротивления и поддержки. 3 точки, примерно на одной линии.
 //       n. Определяем вверх или вниз идет тренд.
 //       n + 1. Мб Рисуем тренд и графики.
+//       n + 2. Состояние нынешней цены рынка (Бычьи и медвежие модели - куда уходит пик; на каком моементе волны тренд).
 //     -----------------------------------------------------------------------------------------------
 //       tests:
 //       1. Проверка на удаление временного файла.
