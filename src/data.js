@@ -1,6 +1,11 @@
+// "build": "rm -rf dist && babel src --out-dir dist --source-maps true"   rm -rf dist - удалить скомпилированный код. прогнать аелем и сорс мапы
+
+
+
+
+import { validateUseBuiltInsOption } from '@babel/preset-env/lib/normalize-options';
 import axios from "axios";
 import fs from "fs";
-import { parametrs } from '../index';
 import BigNumber from "bignumber.js";
 
 const url5Min = 'https://www.alphavantage.co/query?function=CRYPTO_INTRADAY&symbol=ETH&market=USD&interval=5min&apikey=ISRNCIVORXW4BP27';
@@ -9,6 +14,13 @@ const url60min = 'https://www.alphavantage.co/query?function=CRYPTO_INTRADAY&sym
 
 const dataPath = `${ process.cwd() }/data/`; // Во время работы node запускает process. CWD - возвращает путь к root. = process.cwd() + "data".
 const objDate = new Date();
+
+
+const openPriceKey = "1. open";
+const highPriceKey = "2. high";
+const lowPriceKey = "3. low";
+const closePriceKey = "4. close";
+
 
 const timeFrameUrlMap = {       // мапинг для наших юрл с таймфреймами
   5: url5Min,
@@ -30,19 +42,55 @@ export const saveData = async (timeFrame) => {
 
   const dataString = JSON.stringify(data.data, null, "\t");  // Переводит Джсон в стринг
   fs.writeFileSync(pathToData, dataString); // записывает в файл полный документ (путь, data)
-
 };
 
+
 export const readData = (fileName, timeFrame) => {
-  const pathToDataHere = dataPath + fileName + "(" + `${ timeFrame }` + "min)" + ".json";
+  const pathToDataHere = dataPath + fileName + `(${ timeFrame }min).json`;
   const fileString = fs.readFileSync(pathToDataHere); // возвращает весь файл, как стрингу
   const apiFile = JSON.parse(fileString);
   const upperKey = `Time Series Crypto (${ timeFrame }min)`;   // заменяют вызов через точку, потому что стринга
-  // const lowerKey = "2022-02-22 15:00:00";
-  const value = apiFile[upperKey];
+  const allData = apiFile[upperKey];
 
-  console.log(value);
+  return allData;
 };
+
+
+export const modelData = (fileName, timeFrame) => {
+
+  console.log('started');
+
+  const data = readData(fileName, timeFrame);
+
+
+
+  const dataArr = Object.entries(data).map(
+    ([ key, value ]) => {
+      const dataObj = {};
+
+      dataObj.x = key;
+      dataObj.y = [ parseFloat(value[openPriceKey]), parseFloat(value[highPriceKey]), parseFloat(value[lowPriceKey]), parseFloat(value[closePriceKey]) ];
+
+      return dataObj;
+    }
+  );
+
+
+  // const dataArr = Object.entries(data).map(                   // превращаем в аррей, мапим [key, value1, value2...]
+  //   ([ key, value ]) => {
+  //     if (value[openPriceKey] > value[closePriceKey]) {
+  //       return [ key, parseFloat(value[highPriceKey]), parseFloat(value[openPriceKey]), parseFloat(value[closePriceKey]), parseFloat(value[lowPriceKey]) ];
+  //     } else {
+  //       return [ key, parseFloat(value[lowPriceKey]), parseFloat(value[openPriceKey]), parseFloat(value[closePriceKey]), parseFloat(value[highPriceKey]) ];
+  //     }
+  //   }
+  // );
+
+  console.log('step 1');
+
+  return dataArr;
+};
+
 
 export const searchAllPeaks = (fileName, timeFrame) => {
   const pathToDataHere = dataPath + fileName + `(${ timeFrame }min).json`;
@@ -87,7 +135,50 @@ export const searchAllPeaks = (fileName, timeFrame) => {
     lowOperand = lowNext;
     lowNext = new BigNumber(timeSeriesArr[index + 2][1][lowPriceKey])
   }
+
+  const highPeaksArr = Object.entries(highPeaks);
+
+  console.log(highPeaks);
 };
+
+// export const searchResistanceLine = () => {
+//
+//   searchAllPeaks();
+//   const highPeaksArr = Object.entries(highPeaks);
+//
+//   let s = 0;
+//   let preResistanceLine = {};
+//
+//   let firstXKoef = new BigNumber(highPeaksArr[index][0]);
+//   let secXKoef = new BigNumber(highPeaksArr[index + 1][0]);
+//   let thirdXKoef = new BigNumber(highPeaksArr[index + 2][0]);
+//   let firstYKoef = new BigNumber(highPeaksArr[index][1]);
+//   let secYKoef = new BigNumber(highPeaksArr[index + 1][1]);
+//   let thirdYKoef = new BigNumber(highPeaksArr[index + 2][1]);
+//
+//
+//   for (let index = 0; index < highPeaksArr.length - 2; index++) {
+//     for (let jindex = 1; jindex < highPeaksArr.length - 1; jindex++) {
+//       for (let findex = 2; findex < highPeaksArr.length; findex++) {
+//
+//         s = new BigNumber(2).div((firstXKoef - thirdXKoef) * (secYKoef - thirdYKoef) - (secXKoef - thirdXKoef) * (firstYKoef - thirdYKoef));
+//
+//         if (s < new BigNumber(5)) {
+//           preResistanceLine[firstXKoef, secXKoef, thirdXKoef, firstYKoef, secYKoef, thirdYKoef] = s;
+//         }
+//
+//         thirdYKoef = highPeaksArr[index + 3][1];
+//       }
+//
+//     }
+//
+//
+//     if (s < new BigNumber(5)) {
+//       preResistanceLine[firstXKoef, secXKoef, thirdXKoef, firstYKoef, secYKoef, thirdYKoef] = s;
+//     }
+//
+//   }
+// }
 
 //
 // let a = new BigNumber(timeSeriesArr[index][1][highPriceKey]);
@@ -124,8 +215,8 @@ export const searchAllPeaks = (fileName, timeFrame) => {
 
 // Три пика на одной прямой:
 // найти область в которую ходят все свечи
-
-
+//
+//
 //   const resultForResistantLine = Object.entries(result);
 //   const resistantLine = resultForResistantLine.reduce(
 //     (acc, [ key, price ], indexFirst) => {
