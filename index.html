@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <title>Candle chart</title>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    <link rel="shortcut icon" href="#">
+    <link rel="shortcut icon" href="img/favicon.ico" type="image/x-icon">
+
 <!--    <link rel="stylesheet" href="styles.css">-->
 </head>
 <body>
@@ -24,14 +25,17 @@
 </body>
 <script>
 
-  async function gg () {
-    let dataArray = await fetch('/data')
+const allParams = new URLSearchParams(window.location.search);
+const fileNameParam = allParams.get('fileName');
+const timeFrameParam = allParams.get('timeFrame');
+
+  async function getDataArr () {
+    let dataArray = await fetch(`/data`)
       .then((response) => {
         return response.json();
       })
 
-
-    var options = {
+    const options = {
       series: [
         {
           name: 'candle',
@@ -39,25 +43,24 @@
           data: dataArray
         } ],
       chart: {
-        height: 350,
-        type: 'line',
+        height: 700,
       },
       title: {
-        text: 'CandleStick Chart',
+        text: 'Ethereum graph',
         align: 'left'
       },
       stroke: {
-        width: [ 3, 1 ]
+        width: [ 2, 1 ]
       },
       tooltip: {
         shared: true,
         custom: [ function ({ seriesIndex, dataPointIndex, w }) {
-          return w.globals.series[seriesIndex][dataPointIndex]
+          return w.globals.series[seriesIndex][dataPointIndex];
         }, function ({ seriesIndex, dataPointIndex, w }) {
-          var o = w.globals.seriesCandleO[seriesIndex][dataPointIndex]
-          var h = w.globals.seriesCandleH[seriesIndex][dataPointIndex]
-          var l = w.globals.seriesCandleL[seriesIndex][dataPointIndex]
-          var c = w.globals.seriesCandleC[seriesIndex][dataPointIndex]
+          const o = w.globals.seriesCandleO[seriesIndex][dataPointIndex];
+          const h = w.globals.seriesCandleH[seriesIndex][dataPointIndex];
+          const l = w.globals.seriesCandleL[seriesIndex][dataPointIndex];
+          const c = w.globals.seriesCandleC[seriesIndex][dataPointIndex];
           return (
             ''
           )
@@ -68,12 +71,13 @@
       }
     };
 
-    var chart = new ApexCharts(document.querySelector("#chart"), options);
+    const chart = new ApexCharts(document.querySelector("#chart"), options);
 
     chart.render();
   }
 
-  gg();
+  getDataArr();
+
 </script>
 
 </html>

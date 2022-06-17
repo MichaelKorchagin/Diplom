@@ -1,8 +1,6 @@
 // "build": "rm -rf dist && babel src --out-dir dist --source-maps true"   rm -rf dist - удалить скомпилированный код. прогнать аелем и сорс мапы
 
 
-
-
 import { validateUseBuiltInsOption } from '@babel/preset-env/lib/normalize-options';
 import axios from "axios";
 import fs from "fs";
@@ -58,7 +56,7 @@ export const readData = (fileName, timeFrame) => {
 
 export const modelData = (fileName, timeFrame) => {
 
-  console.log('started');
+  console.log('modeling started');
 
   const data = readData(fileName, timeFrame);
 
@@ -85,8 +83,6 @@ export const modelData = (fileName, timeFrame) => {
   //     }
   //   }
   // );
-
-  console.log('step 1');
 
   return dataArr;
 };
@@ -136,49 +132,52 @@ export const searchAllPeaks = (fileName, timeFrame) => {
     lowNext = new BigNumber(timeSeriesArr[index + 2][1][lowPriceKey])
   }
 
-  const highPeaksArr = Object.entries(highPeaks);
 
-  console.log(highPeaks);
+  return lowPeaks;
+  return highPeaks;
 };
 
-// export const searchResistanceLine = () => {
-//
-//   searchAllPeaks();
-//   const highPeaksArr = Object.entries(highPeaks);
-//
-//   let s = 0;
-//   let preResistanceLine = {};
-//
-//   let firstXKoef = new BigNumber(highPeaksArr[index][0]);
-//   let secXKoef = new BigNumber(highPeaksArr[index + 1][0]);
-//   let thirdXKoef = new BigNumber(highPeaksArr[index + 2][0]);
-//   let firstYKoef = new BigNumber(highPeaksArr[index][1]);
-//   let secYKoef = new BigNumber(highPeaksArr[index + 1][1]);
-//   let thirdYKoef = new BigNumber(highPeaksArr[index + 2][1]);
-//
-//
-//   for (let index = 0; index < highPeaksArr.length - 2; index++) {
-//     for (let jindex = 1; jindex < highPeaksArr.length - 1; jindex++) {
-//       for (let findex = 2; findex < highPeaksArr.length; findex++) {
-//
-//         s = new BigNumber(2).div((firstXKoef - thirdXKoef) * (secYKoef - thirdYKoef) - (secXKoef - thirdXKoef) * (firstYKoef - thirdYKoef));
-//
-//         if (s < new BigNumber(5)) {
-//           preResistanceLine[firstXKoef, secXKoef, thirdXKoef, firstYKoef, secYKoef, thirdYKoef] = s;
-//         }
-//
-//         thirdYKoef = highPeaksArr[index + 3][1];
-//       }
-//
-//     }
-//
-//
-//     if (s < new BigNumber(5)) {
-//       preResistanceLine[firstXKoef, secXKoef, thirdXKoef, firstYKoef, secYKoef, thirdYKoef] = s;
-//     }
-//
-//   }
-// }
+export const searchResistanceLine = () => {
+
+  searchAllPeaks();
+  const highPeaksArr = Object.entries(highPeaks);
+
+  let s = 0;
+  let preResistanceLine = {};
+
+  let firstXKoef = new BigNumber(highPeaksArr[index][0]);
+  let secXKoef = new BigNumber(highPeaksArr[index + 1][0]);
+  let thirdXKoef = new BigNumber(highPeaksArr[index + 2][0]);
+  let firstYKoef = new BigNumber(highPeaksArr[index][1]);
+  let secYKoef = new BigNumber(highPeaksArr[index + 1][1]);
+  let thirdYKoef = new BigNumber(highPeaksArr[index + 2][1]);
+
+
+  for (let index = 0; index < highPeaksArr.length - 3; index++) {
+    for (let jindex = 1; jindex < highPeaksArr.length - 2; jindex++) {
+
+      s = new BigNumber(2).div((firstXKoef - thirdXKoef) * (secYKoef - thirdYKoef) - (secXKoef - thirdXKoef) * (firstYKoef - thirdYKoef));
+
+      for (let findex = 2; findex < highPeaksArr.length - 1; findex++) {
+
+        s = new BigNumber(2).div((firstXKoef - thirdXKoef) * (secYKoef - thirdYKoef) - (secXKoef - thirdXKoef) * (firstYKoef - thirdYKoef));
+
+        if (s < new BigNumber(5)) {
+          preResistanceLine[firstXKoef, secXKoef, thirdXKoef, firstYKoef, secYKoef, thirdYKoef] = s;
+        }
+
+        thirdYKoef = highPeaksArr[index + 3][1];
+      }
+
+    }
+
+
+    if (s < new BigNumber(5)) {
+      preResistanceLine[firstXKoef, secXKoef, thirdXKoef, firstYKoef, secYKoef, thirdYKoef] = s;
+    }
+
+  }
+}
 
 //
 // let a = new BigNumber(timeSeriesArr[index][1][highPriceKey]);
@@ -254,12 +253,9 @@ export const searchAllPeaks = (fileName, timeFrame) => {
 // };
 
 
-// TODO: 7. Нашли прямую, по прямой смотрим другие точки, которые попадают в этот диапазон (мб поиск площади другой фигуры)
+// TODO: 7. Нашли прямую, по прямой смотрим другие точки, которые попадают в этот диапазон
 //       8. Сочетание без повторений. Выбрать нужные экстремумы для сопротивления и поддержки. 3 точки, примерно на одной линии.
 //       n. Определяем вверх или вниз идет тренд.
 //       n + 1. Мб Рисуем тренд и графики.
 //       n + 2. Состояние нынешней цены рынка (Бычьи и медвежие модели - куда уходит пик; на каком моементе волны тренд).
 //     -----------------------------------------------------------------------------------------------
-//       tests:
-//       1. Проверка на удаление временного файла.
-//       2. Не приходит АПИ.

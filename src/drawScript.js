@@ -1,5 +1,3 @@
-import ApexCharts from '../node_modules/apexcharts';
-import axios from "../node_modules/axios";
 
 const urlForRequest = 'localhost:3001/index';
 let dataArray = null;
