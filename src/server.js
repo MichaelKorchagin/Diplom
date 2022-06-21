@@ -23,6 +23,7 @@ function getParamsOnServer(allUrlParams) {
       (acc, param) => {
         const [ paramKey, paramValue ] = param.split('=');  // сплитим в разные переменные
 
+        console.log('');
         console.log('key: ', paramKey);
         console.log('value: ', paramValue);
 
@@ -45,10 +46,9 @@ console.log(`Server was started at port: ${ port }`);
 
 const server = http.createServer(async function (request, response) {
     let allUrlParams = request.url.split('?')[1];
+    console.log('');
     console.log(request.url);
     console.log(allUrlParams);
-
-
 
     if (request.url.includes("/index")) {
       const paramObj = getParamsOnServer(allUrlParams);
@@ -72,15 +72,17 @@ const server = http.createServer(async function (request, response) {
 
       response.writeHead(200, { 'Content-Type': 'application / json' });
       console.log('Start response data');
-      response.write(JSON.stringify(modelData(paramObj.fileName, paramObj.timeFrame)));
+      response.write(JSON.stringify(modelData(paramObj.fileName, paramObj.timeFrame))); // сделать для поиска линий
       resetParamState();
       response.end();
     }
 
     else if (request.url.includes("/save")) {
+      const paramObj = getParamsOnServer(allUrlParams);
+
       response.writeHead(200, { 'Content-Type': 'application/javascript' });
-      const resultSaveData = await saveData("5");
-      response.write('Data was save succesfully');
+      const resultSaveData = await saveData(paramObj.timeFrame);
+      response.write('Data was saved succesfully');
       resetParamState();
       response.end();
     }

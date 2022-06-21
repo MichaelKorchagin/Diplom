@@ -1,4 +1,4 @@
-// "build": "rm -rf dist && babel src --out-dir dist --source-maps true"   rm -rf dist - удалить скомпилированный код. прогнать аелем и сорс мапы
+// "build": "rm -rf dist && babel src --out-dir dist --source-maps true"   rm -rf dist - удалить скомпилированный код. прогнать bаbелем и доbавить сорс мапы
 
 
 import { validateUseBuiltInsOption } from '@babel/preset-env/lib/normalize-options';
@@ -60,8 +60,6 @@ export const modelData = (fileName, timeFrame) => {
 
   const data = readData(fileName, timeFrame);
 
-
-
   const dataArr = Object.entries(data).map(
     ([ key, value ]) => {
       const dataObj = {};
@@ -73,184 +71,327 @@ export const modelData = (fileName, timeFrame) => {
     }
   );
 
-
-  // const dataArr = Object.entries(data).map(                   // превращаем в аррей, мапим [key, value1, value2...]
-  //   ([ key, value ]) => {
-  //     if (value[openPriceKey] > value[closePriceKey]) {
-  //       return [ key, parseFloat(value[highPriceKey]), parseFloat(value[openPriceKey]), parseFloat(value[closePriceKey]), parseFloat(value[lowPriceKey]) ];
-  //     } else {
-  //       return [ key, parseFloat(value[lowPriceKey]), parseFloat(value[openPriceKey]), parseFloat(value[closePriceKey]), parseFloat(value[highPriceKey]) ];
-  //     }
-  //   }
-  // );
-
   return dataArr;
 };
 
 
-export const searchAllPeaks = (fileName, timeFrame) => {
+export const searchHighPeaks = (fileName, timeFrame) => {
   const pathToDataHere = dataPath + fileName + `(${ timeFrame }min).json`;
   const fileString = fs.readFileSync(pathToDataHere); // возвращает весь файл, как стрингу
   const apiFile = JSON.parse(fileString);
-  const upperKey = "Meta Data";
-  const lowerKey = "6. Last Refreshed";
-  const lastRefreshedTime = apiFile[upperKey][lowerKey];
+
   const upperKeyTimeSeries = `Time Series Crypto (${ timeFrame }min)`;
   const timeSeriesArr = Object.entries(apiFile[upperKeyTimeSeries]);  // превратили в аррей. редьюс расширяет функционал
   const highPriceKey = "2. high";
-  const lowPriceKey = "3. low";
+
 
   let highPeaks = {};
+
+  for (let index = 1; index < timeSeriesArr.length - 2; index++) {
+
+    let previous = new BigNumber(timeSeriesArr[index - 1][1][highPriceKey]);
+    let operand = new BigNumber(timeSeriesArr[index][1][highPriceKey]);
+    let next = new BigNumber(timeSeriesArr[index + 1][1][highPriceKey]);
+
+    if (operand > previous && operand > next) {
+      highPeaks[index] = operand;
+    }
+
+    previous = operand;
+    operand = next;
+    next = new BigNumber(timeSeriesArr[index + 2][1][highPriceKey]);
+  }
+
+
+  return highPeaks;
+};
+
+export const searchLowPeaks = (fileName, timeFrame) => {
+  const pathToDataHere = dataPath + fileName + `(${ timeFrame }min).json`;
+  const fileString = fs.readFileSync(pathToDataHere); // возвращает весь файл, как стрингу
+  const apiFile = JSON.parse(fileString);
+
+  const upperKeyTimeSeries = `Time Series Crypto (${ timeFrame }min)`;
+  const timeSeriesArr = Object.entries(apiFile[upperKeyTimeSeries]);  // превратили в аррей. редьюс расширяет функционал
+  const lowPriceKey = "3. low";
+
   let lowPeaks = {};
 
   for (let index = 1; index < timeSeriesArr.length - 2; index++) {
 
-    let highPrevious = new BigNumber(timeSeriesArr[index - 1][1][highPriceKey]);
-    let highOperand = new BigNumber(timeSeriesArr[index][1][highPriceKey]);
-    let highNext = new BigNumber(timeSeriesArr[index + 1][1][highPriceKey]);
-
-    let lowPrevious = new BigNumber(timeSeriesArr[index - 1][1][lowPriceKey]);
-    let lowOperand = new BigNumber(timeSeriesArr[index][1][lowPriceKey]);
-    let lowNext = new BigNumber(timeSeriesArr[index + 1][1][lowPriceKey]);
+    let previous = new BigNumber(timeSeriesArr[index - 1][1][lowPriceKey]);
+    let operand = new BigNumber(timeSeriesArr[index][1][lowPriceKey]);
+    let next = new BigNumber(timeSeriesArr[index + 1][1][lowPriceKey]);
 
 
-    if (highOperand > highPrevious && highOperand > highNext) {
-      highPeaks[index] = highOperand;
+    if (operand > previous && operand > next) {
+      lowPeaks[index] = operand;
     }
 
-    highPrevious = highOperand;
-    highOperand = highNext;
-    highNext = new BigNumber(timeSeriesArr[index + 2][1][highPriceKey]);
-
-
-    if (lowOperand < lowPrevious && lowOperand < lowNext) {
-      lowPeaks[index] = lowOperand;
-    }
-
-    lowPrevious = lowOperand;
-    lowOperand = lowNext;
-    lowNext = new BigNumber(timeSeriesArr[index + 2][1][lowPriceKey])
+    previous = operand;
+    operand = next;
+    next = new BigNumber(timeSeriesArr[index + 2][1][lowPriceKey]);
   }
 
 
   return lowPeaks;
-  return highPeaks;
 };
-
-export const searchResistanceLine = () => {
-
-  searchAllPeaks();
-  const highPeaksArr = Object.entries(highPeaks);
-
-  let s = 0;
-  let preResistanceLine = {};
-
-  let firstXKoef = new BigNumber(highPeaksArr[index][0]);
-  let secXKoef = new BigNumber(highPeaksArr[index + 1][0]);
-  let thirdXKoef = new BigNumber(highPeaksArr[index + 2][0]);
-  let firstYKoef = new BigNumber(highPeaksArr[index][1]);
-  let secYKoef = new BigNumber(highPeaksArr[index + 1][1]);
-  let thirdYKoef = new BigNumber(highPeaksArr[index + 2][1]);
-
-
-  for (let index = 0; index < highPeaksArr.length - 3; index++) {
-    for (let jindex = 1; jindex < highPeaksArr.length - 2; jindex++) {
-
-      s = new BigNumber(2).div((firstXKoef - thirdXKoef) * (secYKoef - thirdYKoef) - (secXKoef - thirdXKoef) * (firstYKoef - thirdYKoef));
-
-      for (let findex = 2; findex < highPeaksArr.length - 1; findex++) {
-
-        s = new BigNumber(2).div((firstXKoef - thirdXKoef) * (secYKoef - thirdYKoef) - (secXKoef - thirdXKoef) * (firstYKoef - thirdYKoef));
-
-        if (s < new BigNumber(5)) {
-          preResistanceLine[firstXKoef, secXKoef, thirdXKoef, firstYKoef, secYKoef, thirdYKoef] = s;
-        }
-
-        thirdYKoef = highPeaksArr[index + 3][1];
-      }
-
-    }
-
-
-    if (s < new BigNumber(5)) {
-      preResistanceLine[firstXKoef, secXKoef, thirdXKoef, firstYKoef, secYKoef, thirdYKoef] = s;
-    }
-
-  }
-}
-
 //
-// let a = new BigNumber(timeSeriesArr[index][1][highPriceKey]);
-// let b = new BigNumber(timeSeriesArr[index + 1][1][highPriceKey]);
+// function combinationsOfPointForLines(n, k) {
+//   let x = 0, y = 0, z = 0;
+//   let p = new Array(n + 2);
+//   let c = new Array(k);
 //
-// if (a  b) {
+//   let init = function () {
+//     let i;
+//     p[0] = n + 1;
+//     for (i = 1; i != n - k + 1; i++) {
+//       p[i] = 0;
+//     }
+//     while (i != n + 1) {
+//       p[i] = i + k - n;
+//       i++;
+//     }
+//     p[n + 1] = -2;
+//     if (k == 0) {
+//       p[1] = 1;
+//     }
+//     for (i = 0; i < k; i++) {
+//       c[i] = i + n - k;
+//     }
+//   };
 //
-//   let firstXKoef = new BigNumber(index);
-//   let secXKoef = new BigNumber(index + 1);
-//   let thirdXKoef = new BigNumber(index + 2);
-//   let firstYKoef = new BigNumber(timeSeriesArr[index][1][highPriceKey]);
-//   let secYKoef = new BigNumber(timeSeriesArr[index + 1][1][highPriceKey]);
-//   let thirdYKoef = new BigNumber(timeSeriesArr[index + 2][1][highPriceKey]);
-//   let s = new BigNumber(0);
+//   let twiddle = function () {
+//     let i, j, m;
+//     j = 1;
+//     while (p[j] <= 0) {
+//       j++;
+//     }
+//     if (p[j - 1] == 0) {
+//       for (i = j - 1; i != 1; i--) {
+//         p[i] = -1;
+//       }
+//       p[j] = 0;
+//       x = z = 0;
+//       p[1] = 1;
+//       y = j - 1;
+//     } else {
+//       if (j > 1) {
+//         p[j - 1] = 0;
+//       }
+//       do {
+//         j++;
+//       } while (p[j] > 0);
+//       m = j - 1;
+//       i = j;
+//       while (p[i] == 0) {
+//         p[i++] = -1;
+//       }
+//       if (p[i] == -1) {
+//         p[i] = p[m];
+//         z = p[m] - 1;
+//         x = i - 1;
+//         y = m - 1;
+//         p[m] = -1;
+//       } else {
+//         if (i == p[0]) {
+//           return false;
+//         } else {
+//           p[j] = p[i];
+//           z = p[i] - 1;
+//           p[i] = 0;
+//           x = j - 1;
+//           y = i - 1;
+//         }
+//       }
+//     }
+//     return true;
+//   };
 //
-//   s = ((firstXKoef - thirdXKoef) * (secYKoef - thirdYKoef) - (secXKoef - thirdXKoef) * (firstYKoef - thirdYKoef)) / new BigNumber(2);
+//   let first = true;
+//   init();
 //
+//   return {
+//     hasNext: function () {
+//       if (first) {
+//         first = false;
+//         return true;
+//       } else {
+//         let result = twiddle();
+//         if (result) {
+//           c[z] = x;
+//         }
+//         return result;
+//       }
+//     },
+//     getCombination: function () {
+//       return c;
+//     }
+//   };
 // }
 
-// const result = timeSeriesPeaksArr.reduce(
-//   (acc, [ key, priceObject ], index) => {
-//     let operand = new BigNumber(priceObject[highPriceKey]);
-//     if (index !== timeSeriesPeaksArr.length / 3) {
-//       acc.partOne =
-//     }
-//     if (index)
-//       }, {
-//     partOne: {},
-//     partTwo: {},
-//     partThree: {}
-//   }
-// );
-// console.log(Object.entries(result).map(element => element.toString()));
 
-// Три пика на одной прямой:
-// найти область в которую ходят все свечи
-//
-//
-//   const resultForResistantLine = Object.entries(result);
-//   const resistantLine = resultForResistantLine.reduce(
-//     (acc, [ key, price ], indexFirst) => {
-//       if (indexFirst <= resultForResistantLine.length - 3) {
-//
-//         let firstXKoef = key;
-//         let secXKoef = resultForResistantLine[indexFirst + 1][0];
-//         let thirdXKoef = resultForResistantLine[indexFirst + 2][0];
-//         let firstYKoef = price;
-//         let secYKoef = resultForResistantLine[indexFirst + 1][1];
-//         let thirdYKoef = resultForResistantLine[indexFirst + 2][1];
-//
-//         const objS =  resultForResistantLine.reduce(
-//           (acc, [firstXKoef, firstYkoef, s], indexSec) => {
-//             do {
-//               const s = ((firstXKoef - thirdXKoef) * (secYKoef - thirdYKoef) - (secXKoef - thirdXKoef) * (firstYKoef - thirdYKoef)) / new BigNumber(2);
-//               acc[indexSec] = s;
-//
-//               secXKoef = resultForResistantLine[indexFirst + 2][0];
-//               secYKoef = resultForResistantLine[indexFirst + 2][1];
-//             }
-//             while (indexFirst <= resultForResistantLine.length - 2);
-//
-//           }, {}
-//         );
-//
-//         acc[indexFirst] = objS;
-//
-//       }
-//
-//       return acc;
-//     }, {}
-//   );
-//   console.log(Object.entries(resistantLine).map(element => element.toString()));
-// };
+// Проверить в каком виде приходят и отдаются данные. Выbрать правильную типизацию
+
+// Надо получить все треугольники и выbрать те, в которых 5 > S (площадь)
+// Отоbрать по kx + b
+export const searchComboHighPeaks = (fileName, timeFrame) => {
+  const combine = (arr, k, withRepetition = false) => {
+    const combinations = []
+    const combination = Array(k)
+    const internalCombine = (start, depth) => {
+      if (depth === k) {
+        combinations.push([ ...combination ])
+        return
+      }
+      for (let index = start; index < arr.length; ++index) {
+        combination[depth] = arr[index]
+        internalCombine(index + (withRepetition ? 0 : 1), depth + 1)
+      }
+    }
+    internalCombine(0, 0)
+    return combinations
+  }
+
+  const dataForAnalysis = searchHighPeaks(fileName, timeFrame);
+  const array = Object.entries(dataForAnalysis);
+  const k = 3;
+
+  const combinations = combine(array, k);
+
+  return combinations;
+}
+
+export const searchComboLowPeaks = (fileName, timeFrame) => {
+  const combine = (arr, k, withRepetition = false) => {
+    const combinations = []
+    const combination = Array(k)
+    const internalCombine = (start, depth) => {
+      if (depth === k) {
+        combinations.push([ ...combination ])
+        return
+      }
+      for (let index = start; index < arr.length; ++index) {
+        combination[depth] = arr[index]
+        internalCombine(index + (withRepetition ? 0 : 1), depth + 1)
+      }
+    }
+    internalCombine(0, 0)
+    return combinations
+  }
+
+  const dataForAnalysis = searchLowPeaks(fileName, timeFrame);
+  const array = Object.entries(dataForAnalysis);
+  const k = 3;
+
+  const combinations = combine(array, k);
+
+  console.log({ combinations: combinations.map(c => c.join()) });
+
+  return combinations;
+}
+
+export const highLine = (fileName, timeFrame) => {
+
+  const combinations = searchComboHighPeaks(fileName, timeFrame);
+
+  // получает всю дату для того, чтоы вытащить дату и время
+  const timeSeriesArrHere = Object.getOwnPropertyNames(readData(fileName, timeFrame));
+  const timeSeriesArr = Object.entries(readData(fileName, timeFrame));
+
+  const lines = [];
+
+  for (let i = 0; i < combinations.length; i++) {
+
+    let firstXKoef = new BigNumber(combinations[i][0][0]);
+    let secXKoef = new BigNumber(combinations[i][1][0]);
+    let thirdXKoef = new BigNumber(combinations[i][2][0]);
+    let firstYKoef = combinations[i][0][1];
+    let secYKoef = combinations[i][1][1];
+    let thirdYKoef = combinations[i][2][1];
+
+    const firstXMinusXThird = firstXKoef.minus(thirdXKoef);
+    const secXMinusXThird = secXKoef.minus(thirdXKoef);
+    const secYMinusYThird = secYKoef.minus(thirdYKoef);
+    const firstYMinusYthird = firstYKoef.minus(thirdYKoef);
+
+    const s = ((firstXMinusXThird.multipliedBy(secYMinusYThird)).minus(secXMinusXThird.multipliedBy(firstYMinusYthird))).div(2);
+
+    const oneLine = {};
+    const deviation = new BigNumber(combinations[i][1][1].div(10000).multipliedBy(5)); // отклонение
+
+    // if dev > |s|
+    if (deviation.isGreaterThanOrEqualTo(s.absoluteValue())) {
+
+      let firstIndex = null;
+      let thirdIndex = null;
+      let firstPrice = null;
+      let thirdPrice = null;
+
+      for (let j = 0; j < combinations[i].length; j++) {
+        const dateTime = combinations[i][j][0];
+        const x = timeSeriesArrHere[dateTime];
+        const y = combinations[i][j][1];
+
+        if (j === 0) {
+          firstIndex = dateTime;
+          firstPrice = y;
+        }
+        if (j === 2) {
+          thirdIndex = dateTime;
+          thirdPrice = y;
+        }
+
+        oneLine[x] = y; // пуш точки в oneLine
+      }
+
+
+
+      const multOne = new BigNumber(firstIndex).multipliedBy(thirdPrice);
+      const multTwo = new BigNumber(firstPrice).multipliedBy(thirdIndex);
+
+      const aKoef = new BigNumber(firstPrice).minus(thirdPrice); // A = y1 - y2
+      const bKoef = new BigNumber(thirdIndex - firstIndex); // B = X2 - X1,
+      const cKoef = multOne.minus(multTwo); // C = X1*Y2 - X2*Y1.
+
+      const equation = (g, operand) => {
+        const multFirst = aKoef.multipliedBy(g);
+        const multSec = bKoef.multipliedBy(operand);
+
+        const plus = multFirst.plus(multSec);
+        return plus.plus(cKoef); // ax + by + c
+      }
+
+
+      let eq = true;
+
+      for (let g = parseInt(firstIndex); g < parseInt(thirdIndex); g++) {
+        const operand = timeSeriesArr[g][1]['2. high'];
+        const resultEquation = equation(g, operand);
+        if (new BigNumber(0).isGreaterThanOrEqualTo(resultEquation)) {
+
+        } else {
+          eq = false;
+          break;
+        }
+      }
+
+      if (eq === true) {
+        lines.push(oneLine);
+      }
+    }
+  }
+  return lines;
+}
+
+
+// Смоделировать оbъект с данными для Line графика
+// подать (запушить) в index.html/options/series/lineChart
+export const modelDataForLines = (fileName, timeFrame) => {
+  searchComboHighPeaks();
+  // searchSupportLine();
+
+}
 
 
 // TODO: 7. Нашли прямую, по прямой смотрим другие точки, которые попадают в этот диапазон
