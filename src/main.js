@@ -1,6 +1,6 @@
 require("@babel/core");
 require("@babel/register");
-const { saveData, readData, searchHighPeaks, modelData, searchComboHighPeaks, highLine } = require('./data');
+const { saveData, readData, searchHighPeaks, modelData, searchComboHighPeaks, highLine, modelHighLines } = require('./data');
 
 
 const [ , , operation, fileName, timeFrame ] = process.argv;
@@ -20,6 +20,9 @@ switch (operation) {
     break;
   case "highLine":
     highLine(fileName, timeFrame);
+    break;
+  case "modelHighLines":
+    modelHighLines(fileName, timeFrame);
     break;
   case "modelData":
     modelData(fileName, timeFrame);

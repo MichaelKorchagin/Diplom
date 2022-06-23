@@ -81,11 +81,11 @@ export const searchHighPeaks = (fileName, timeFrame) => {
   const apiFile = JSON.parse(fileString);
 
   const upperKeyTimeSeries = `Time Series Crypto (${ timeFrame }min)`;
-  const timeSeriesArr = Object.entries(apiFile[upperKeyTimeSeries]);  // превратили в аррей. редьюс расширяет функционал
+  const timeSeriesArr = Object.entries(apiFile[upperKeyTimeSeries]); // превратили в аррей. редьюс расширяет функционал
   const highPriceKey = "2. high";
 
 
-  let highPeaks = {};
+  const highPeaks = {};
 
   for (let index = 1; index < timeSeriesArr.length - 2; index++) {
 
@@ -93,143 +93,23 @@ export const searchHighPeaks = (fileName, timeFrame) => {
     let operand = new BigNumber(timeSeriesArr[index][1][highPriceKey]);
     let next = new BigNumber(timeSeriesArr[index + 1][1][highPriceKey]);
 
-    if (operand > previous && operand > next) {
+    if (operand.isGreaterThan(previous) && operand.isGreaterThan(next)) {
       highPeaks[index] = operand;
     }
-
-    previous = operand;
-    operand = next;
-    next = new BigNumber(timeSeriesArr[index + 2][1][highPriceKey]);
+    if (operand.isEqualTo(previous) || operand.isEqualTo(next)) {
+      if (!operand.isEqualTo(highPeaks[index - 1])){
+        highPeaks[index] = operand;
+      }
+    }
+    //
+    // previous = operand;
+    // operand = next;
+    // next = new BigNumber(timeSeriesArr[index + 2][1][highPriceKey]);
   }
 
 
   return highPeaks;
 };
-
-export const searchLowPeaks = (fileName, timeFrame) => {
-  const pathToDataHere = dataPath + fileName + `(${ timeFrame }min).json`;
-  const fileString = fs.readFileSync(pathToDataHere); // возвращает весь файл, как стрингу
-  const apiFile = JSON.parse(fileString);
-
-  const upperKeyTimeSeries = `Time Series Crypto (${ timeFrame }min)`;
-  const timeSeriesArr = Object.entries(apiFile[upperKeyTimeSeries]);  // превратили в аррей. редьюс расширяет функционал
-  const lowPriceKey = "3. low";
-
-  let lowPeaks = {};
-
-  for (let index = 1; index < timeSeriesArr.length - 2; index++) {
-
-    let previous = new BigNumber(timeSeriesArr[index - 1][1][lowPriceKey]);
-    let operand = new BigNumber(timeSeriesArr[index][1][lowPriceKey]);
-    let next = new BigNumber(timeSeriesArr[index + 1][1][lowPriceKey]);
-
-
-    if (operand > previous && operand > next) {
-      lowPeaks[index] = operand;
-    }
-
-    previous = operand;
-    operand = next;
-    next = new BigNumber(timeSeriesArr[index + 2][1][lowPriceKey]);
-  }
-
-
-  return lowPeaks;
-};
-//
-// function combinationsOfPointForLines(n, k) {
-//   let x = 0, y = 0, z = 0;
-//   let p = new Array(n + 2);
-//   let c = new Array(k);
-//
-//   let init = function () {
-//     let i;
-//     p[0] = n + 1;
-//     for (i = 1; i != n - k + 1; i++) {
-//       p[i] = 0;
-//     }
-//     while (i != n + 1) {
-//       p[i] = i + k - n;
-//       i++;
-//     }
-//     p[n + 1] = -2;
-//     if (k == 0) {
-//       p[1] = 1;
-//     }
-//     for (i = 0; i < k; i++) {
-//       c[i] = i + n - k;
-//     }
-//   };
-//
-//   let twiddle = function () {
-//     let i, j, m;
-//     j = 1;
-//     while (p[j] <= 0) {
-//       j++;
-//     }
-//     if (p[j - 1] == 0) {
-//       for (i = j - 1; i != 1; i--) {
-//         p[i] = -1;
-//       }
-//       p[j] = 0;
-//       x = z = 0;
-//       p[1] = 1;
-//       y = j - 1;
-//     } else {
-//       if (j > 1) {
-//         p[j - 1] = 0;
-//       }
-//       do {
-//         j++;
-//       } while (p[j] > 0);
-//       m = j - 1;
-//       i = j;
-//       while (p[i] == 0) {
-//         p[i++] = -1;
-//       }
-//       if (p[i] == -1) {
-//         p[i] = p[m];
-//         z = p[m] - 1;
-//         x = i - 1;
-//         y = m - 1;
-//         p[m] = -1;
-//       } else {
-//         if (i == p[0]) {
-//           return false;
-//         } else {
-//           p[j] = p[i];
-//           z = p[i] - 1;
-//           p[i] = 0;
-//           x = j - 1;
-//           y = i - 1;
-//         }
-//       }
-//     }
-//     return true;
-//   };
-//
-//   let first = true;
-//   init();
-//
-//   return {
-//     hasNext: function () {
-//       if (first) {
-//         first = false;
-//         return true;
-//       } else {
-//         let result = twiddle();
-//         if (result) {
-//           c[z] = x;
-//         }
-//         return result;
-//       }
-//     },
-//     getCombination: function () {
-//       return c;
-//     }
-//   };
-// }
-
 
 // Проверить в каком виде приходят и отдаются данные. Выbрать правильную типизацию
 
@@ -262,35 +142,6 @@ export const searchComboHighPeaks = (fileName, timeFrame) => {
   return combinations;
 }
 
-export const searchComboLowPeaks = (fileName, timeFrame) => {
-  const combine = (arr, k, withRepetition = false) => {
-    const combinations = []
-    const combination = Array(k)
-    const internalCombine = (start, depth) => {
-      if (depth === k) {
-        combinations.push([ ...combination ])
-        return
-      }
-      for (let index = start; index < arr.length; ++index) {
-        combination[depth] = arr[index]
-        internalCombine(index + (withRepetition ? 0 : 1), depth + 1)
-      }
-    }
-    internalCombine(0, 0)
-    return combinations
-  }
-
-  const dataForAnalysis = searchLowPeaks(fileName, timeFrame);
-  const array = Object.entries(dataForAnalysis);
-  const k = 3;
-
-  const combinations = combine(array, k);
-
-  console.log({ combinations: combinations.map(c => c.join()) });
-
-  return combinations;
-}
-
 export const highLine = (fileName, timeFrame) => {
 
   const combinations = searchComboHighPeaks(fileName, timeFrame);
@@ -318,7 +169,7 @@ export const highLine = (fileName, timeFrame) => {
     const s = ((firstXMinusXThird.multipliedBy(secYMinusYThird)).minus(secXMinusXThird.multipliedBy(firstYMinusYthird))).div(2);
 
     const oneLine = {};
-    const deviation = new BigNumber(combinations[i][1][1].div(10000).multipliedBy(5)); // отклонение
+    const deviation = new BigNumber(combinations[i][1][1].div(1000).multipliedBy(5)); // отклонение
 
     // if dev > |s|
     if (deviation.isGreaterThanOrEqualTo(s.absoluteValue())) {
@@ -344,7 +195,6 @@ export const highLine = (fileName, timeFrame) => {
 
         oneLine[x] = y; // пуш точки в oneLine
       }
-
 
 
       const multOne = new BigNumber(firstIndex).multipliedBy(thirdPrice);
@@ -385,18 +235,32 @@ export const highLine = (fileName, timeFrame) => {
 }
 
 
-// Смоделировать оbъект с данными для Line графика
-// подать (запушить) в index.html/options/series/lineChart
-export const modelDataForLines = (fileName, timeFrame) => {
-  searchComboHighPeaks();
-  // searchSupportLine();
+export const modelHighLines = (fileName, timeFrame) => {
 
-}
+  console.log('modeling lines started');
+
+  const data = highLine(fileName, timeFrame);
+
+  const oneLine = data.map(
+    (value, index) => {
+      const dataObj = {};
+
+      dataObj.name = `Resistance Line ${index + 1}`;
+      dataObj.type = 'line';
+      dataObj.data = Object.entries(value).map(
+        ([ key, value ]) => ({
+          x: key,
+          y: parseFloat(value)
+        })
+      );
+
+      return dataObj;
+    });
+
+  return oneLine;
+};
 
 
-// TODO: 7. Нашли прямую, по прямой смотрим другие точки, которые попадают в этот диапазон
-//       8. Сочетание без повторений. Выбрать нужные экстремумы для сопротивления и поддержки. 3 точки, примерно на одной линии.
-//       n. Определяем вверх или вниз идет тренд.
-//       n + 1. Мб Рисуем тренд и графики.
-//       n + 2. Состояние нынешней цены рынка (Бычьи и медвежие модели - куда уходит пик; на каком моементе волны тренд).
+
+// TODO:
 //     -----------------------------------------------------------------------------------------------

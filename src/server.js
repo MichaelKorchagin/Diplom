@@ -1,5 +1,5 @@
 import http from 'http';
-import { saveData } from './data';
+import { modelHighLines, saveData } from './data';
 import { modelData } from './data';
 import fs from "fs";
 
@@ -72,7 +72,13 @@ const server = http.createServer(async function (request, response) {
 
       response.writeHead(200, { 'Content-Type': 'application / json' });
       console.log('Start response data');
-      response.write(JSON.stringify(modelData(paramObj.fileName, paramObj.timeFrame))); // сделать для поиска линий
+
+      const dataReturn = {
+        model: modelData(paramObj.fileName, paramObj.timeFrame),
+        lines: modelHighLines(paramObj.fileName, paramObj.timeFrame)
+      }
+      response.write(JSON.stringify(dataReturn));
+
       resetParamState();
       response.end();
     }
